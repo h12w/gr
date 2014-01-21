@@ -97,7 +97,6 @@ func (a *App) Run() error {
 				case sdl.WindoweventExposed:
 					a.v.Render()
 				case sdl.WindoweventResized:
-					a.m.SetWidth(a.v.Width())
 					a.refreshView()
 				}
 			}

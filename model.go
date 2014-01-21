@@ -5,7 +5,7 @@
 package main
 
 import (
-	"color"
+	"github.com/hailiang/color"
 	"go-mupdf/fz"
 	//	"sync"
 	//	"time"
@@ -62,7 +62,7 @@ func (m *Model) Height() int {
 	return len(m.cache) / m.RenderOption.Width
 }
 
-func (m *Model) SetWidth(width int) {
+func (m *Model) setWidth(width int) {
 	if width != m.Width {
 		m.Width = width
 
@@ -133,6 +133,7 @@ func (m *Model) renderPage(pageIndex int) {
 }
 
 func (m *Model) Get(y, h, w int) []Pixel {
+	m.setWidth(w)
 	pageStart := 0
 	for i := 0; i < m.PageCount(); i++ {
 		pageEnd := pageStart + m.heights[i]
