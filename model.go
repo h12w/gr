@@ -15,7 +15,7 @@ import (
 type RenderOption struct {
 	Width      int
 	Dark       bool
-	Brightness float32
+	Brightness float64
 }
 
 type Model struct {
@@ -39,7 +39,7 @@ func newModel() (*Model, error) {
 		ctx: ctx,
 		RenderOption: RenderOption{
 			Dark:       true,
-			Brightness: 0.5,
+			Brightness: 0.45,
 		},
 	}, nil
 }
@@ -189,34 +189,22 @@ func renderPage(ctx *fz.Context, doc *fz.Document, pageIndex int, opt *RenderOpt
 	if opt.Dark {
 		pixels := buf
 		off := 0
-		l := opt.Brightness
-		ll := opt.Brightness * opt.Brightness
-
-		// shortcut for white
-		rgbWhite := Pixel{0xFF, 0xFF, 0xFF, 0xFF}
-		hsvWhite := color.RGBToHSVi(0xFF, 0xFF, 0xFF)
-		hsvIn, hsvOut := hsvWhite, hsvWhite
-		hsvOut.V = int16(l * float32(color.Fac-hsvOut.V))
-		hsvIn.V = int16(ll * float32(hsvIn.V))
+		b := opt.Brightness
+		bb := b * b
 
 		for y := 0; y < int(pix.H); y++ {
 			for x := 0; x < int(pix.W); x++ {
 				pixel := pixels[off+x]
-				if pixel == rgbWhite {
-					if imgRects.In(x, y) {
-						pixels[off+x].SetRGB(hsvIn.ToRGB())
-					} else {
-						pixels[off+x].SetRGB(hsvOut.ToRGB())
-					}
+				rgb := color.RGBFromBytes(pixel.GetRGB())
+				if !imgRects.In(x, y) {
+					hcl := rgb.ToHCL()
+					hcl.L = 1 - hcl.L
+					rgb = hcl.ToRGB()
+					rgb.Times(b)
 				} else {
-					hsv := color.RGBToHSVi(pixels[off+x].GetRGB())
-					if !imgRects.In(x, y) {
-						hsv.V = int16(l * float32(color.Fac-hsv.V))
-					} else {
-						hsv.V = int16(ll * float32(hsv.V))
-					}
-					pixels[off+x].SetRGB(hsv.ToRGB())
+					rgb.Times(bb)
 				}
+				pixels[off+x].SetRGB(rgb.ToBytes())
 			}
 			off += int(pix.W)
 		}
